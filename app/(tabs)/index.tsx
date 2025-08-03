@@ -44,6 +44,7 @@ interface UserProfile {
   interestedIn: string[];
 }
 
+
 const sampleProfiles: UserProfile[] = [
   {
     id: 1,
@@ -209,6 +210,7 @@ export default function DiscoverScreen() {
     setSelectedSection(null);
   };
 
+
   const animatedStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
       translateX.value,
@@ -293,7 +295,6 @@ export default function DiscoverScreen() {
         
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>Find your perfect co-founder</Text>
         </View>
 
         <View style={styles.cardContainer}>
@@ -312,6 +313,9 @@ export default function DiscoverScreen() {
                     </View>
                     <Text style={styles.companyText}>{nextProfile.title} • {nextProfile.company}</Text>
                   </View>
+                  <TouchableOpacity style={styles.moreButton}>
+                    <MoreHorizontal size={20} color="#999" />
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -476,6 +480,7 @@ export default function DiscoverScreen() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
