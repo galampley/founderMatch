@@ -730,10 +730,20 @@ export default function CollabsScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Collaborations</Text>
-        <Text style={styles.headerSubtitle}>
-          {activeTab === 'active' ? 'Track your ongoing collaborations' : 'Discover collaboration methods'}
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Collaborations</Text>
+            <Text style={styles.headerSubtitle}>
+              {activeTab === 'active' ? 'Track your ongoing collaborations' : 'Discover collaboration methods'}
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setShowCreateCustomModal(true)}
+          >
+            <Plus size={24} color="#0077b5" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Navigation */}
@@ -1362,6 +1372,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -1371,6 +1389,17 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#999',
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 119, 181, 0.1)',
+    borderWidth: 1,
+    borderColor: '#0077b5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
   },
   tabContainer: {
     flexDirection: 'row',
