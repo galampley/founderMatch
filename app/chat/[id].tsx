@@ -13,7 +13,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { ChevronLeft, Send, MoveHorizontal as MoreHorizontal, UserPlus, Clock, Code, Target, Lightbulb, Users } from 'lucide-react-native';
+import { ChevronLeft, Send, UserPlus, Clock, Code, Target, Lightbulb, Users } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 interface Message {
@@ -331,9 +331,6 @@ export default function ChatScreen() {
           <TouchableOpacity style={styles.sendCollabButton} onPress={handleSendCollab}>
             <UserPlus size={16} color="#0077b5" />
             <Text style={styles.sendCollabText}>Send Collab</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.moreButton}>
-            <MoreHorizontal size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>

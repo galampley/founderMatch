@@ -21,7 +21,7 @@ import Animated, {
   runOnJS,
   interpolate,
 } from 'react-native-reanimated';
-import { Heart, X, MapPin, Briefcase, Lightbulb, Users, MoveHorizontal as MoreHorizontal, Send } from 'lucide-react-native';
+import { Heart, X, MapPin, Briefcase, Lightbulb, Users, Send } from 'lucide-react-native';
 import { useUser } from '@/contexts/UserContext';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
@@ -313,9 +313,6 @@ export default function DiscoverScreen() {
                     </View>
                     <Text style={styles.companyText}>{nextProfile.title} • {nextProfile.company}</Text>
                   </View>
-                  <TouchableOpacity style={styles.moreButton}>
-                    <MoreHorizontal size={20} color="#999" />
-                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -336,9 +333,6 @@ export default function DiscoverScreen() {
                     </View>
                     <Text style={styles.companyText}>{currentProfile.title} • {currentProfile.company}</Text>
                   </View>
-                  <TouchableOpacity style={styles.moreButton}>
-                    <MoreHorizontal size={20} color="#999" />
-                  </TouchableOpacity>
                 </View>
               </View>
 
