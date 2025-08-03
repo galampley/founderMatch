@@ -506,6 +506,7 @@ export default function CollabsScreen() {
   const [selectedActiveCollab, setSelectedActiveCollab] = useState<ActiveCollab | null>(null);
   const [selectedStep, setSelectedStep] = useState<{collab: Collab, stepIndex: number} | null>(null);
   const [activeCollabs, setActiveCollabs] = useState(sampleActiveCollabs);
+  const [showCreateCustomModal, setShowCreateCustomModal] = useState(false);
 
   // Initialize step editing state when a step is selected
   const initializeStepState = (activeCollab: ActiveCollab, stepIndex: number) => {
@@ -524,6 +525,18 @@ export default function CollabsScreen() {
 
   const [currentStepNotes, setCurrentStepNotes] = useState('');
   const [currentCriteriaCompletion, setCurrentCriteriaCompletion] = useState<boolean[]>([]);
+  
+  // Custom collaboration form state
+  const [customCollabForm, setCustomCollabForm] = useState({
+    title: '',
+    description: '',
+    duration: '',
+    category: 'Business' as 'Technical' | 'Business' | 'Product' | 'Design',
+    difficulty: 'Medium' as 'Easy' | 'Medium' | 'Hard',
+    steps: [{ title: '', description: '', successCriteria: [''] }],
+    outcome: '',
+    successCriteria: ['']
+  });
 
   // Update state when step selection changes
   useEffect(() => {
@@ -717,10 +730,20 @@ export default function CollabsScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Collaborations</Text>
-        <Text style={styles.headerSubtitle}>
-          {activeTab === 'active' ? 'Track your ongoing collaborations' : 'Discover collaboration methods'}
-        </Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>Collaborations</Text>
+            <Text style={styles.headerSubtitle}>
+              {activeTab === 'active' ? 'Track your ongoing collaborations' : 'Discover collaboration methods'}
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setShowCreateCustomModal(true)}
+          >
+            <Plus size={24} color="#0077b5" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Navigation */}
@@ -765,9 +788,12 @@ export default function CollabsScreen() {
             </View>
             
             <View style={styles.addCustomContainer}>
-              <TouchableOpacity style={styles.addCustomButton}>
+              <TouchableOpacity 
+                style={styles.addCustomButton}
+                onPress={() => setShowCreateCustomModal(true)}
+              >
                 <Plus size={20} color="#0077b5" />
-                <Text style={styles.addCustomText}>Suggest Custom Collaboration</Text>
+                <Text style={styles.addCustomText}>Create Custom Collaboration</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -970,6 +996,292 @@ export default function CollabsScreen() {
         )}
       </Modal>
 
+      {/* Create Custom Collaboration Modal */}
+      <Modal
+        visible={showCreateCustomModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCreateCustomModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCreateCustomModal(false)}>
+              <X size={24} color="#999" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Create Custom Collaboration</Text>
+            <TouchableOpacity 
+              style={styles.saveButton}
+              onPress={() => {
+                // TODO: Handle form submission
+                Alert.alert('Success', 'Custom collaboration created!');
+                setShowCreateCustomModal(false);
+                setCustomCollabForm({
+                  title: '',
+                  description: '',
+                  duration: '',
+                  category: 'Business',
+                  difficulty: 'Medium',
+                  steps: [{ title: '', description: '', successCriteria: [''] }],
+                  outcome: '',
+                  successCriteria: ['']
+                });
+              }}
+            >
+              <Text style={styles.saveButtonText}>Create</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Collaboration Details</Text>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Title</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={customCollabForm.title}
+                  onChangeText={(text) => setCustomCollabForm(prev => ({...prev, title: text}))}
+                  placeholder="Enter collaboration title..."
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Description</Text>
+                <TextInput
+                  style={[styles.formInput, styles.textArea]}
+                  value={customCollabForm.description}
+                  onChangeText={(text) => setCustomCollabForm(prev => ({...prev, description: text}))}
+                  placeholder="Describe what you want to collaborate on..."
+                  placeholderTextColor="#666"
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Expected Duration</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={customCollabForm.duration}
+                  onChangeText={(text) => setCustomCollabForm(prev => ({...prev, duration: text}))}
+                  placeholder="e.g., 2-3 hours, 1-2 days..."
+                  placeholderTextColor="#666"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Category</Text>
+                <View style={styles.categorySelector}>
+                  {(['Technical', 'Business', 'Product', 'Design'] as const).map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[
+                        styles.categoryOption,
+                        customCollabForm.category === cat && styles.categoryOptionSelected
+                      ]}
+                      onPress={() => setCustomCollabForm(prev => ({...prev, category: cat}))}
+                    >
+                      <Text style={[
+                        styles.categoryOptionText,
+                        customCollabForm.category === cat && styles.categoryOptionTextSelected
+                      ]}>
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Difficulty</Text>
+                <View style={styles.categorySelector}>
+                  {(['Easy', 'Medium', 'Hard'] as const).map((diff) => (
+                    <TouchableOpacity
+                      key={diff}
+                      style={[
+                        styles.categoryOption,
+                        customCollabForm.difficulty === diff && styles.categoryOptionSelected
+                      ]}
+                      onPress={() => setCustomCollabForm(prev => ({...prev, difficulty: diff}))}
+                    >
+                      <Text style={[
+                        styles.categoryOptionText,
+                        customCollabForm.difficulty === diff && styles.categoryOptionTextSelected
+                      ]}>
+                        {diff}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Expected Outcome</Text>
+                <TextInput
+                  style={[styles.formInput, styles.textArea]}
+                  value={customCollabForm.outcome}
+                  onChangeText={(text) => setCustomCollabForm(prev => ({...prev, outcome: text}))}
+                  placeholder="What should participants achieve from this collaboration?"
+                  placeholderTextColor="#666"
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>How it works</Text>
+                <Text style={styles.formSubtitle}>Define the steps participants should follow:</Text>
+                {customCollabForm.steps.map((step, stepIndex) => (
+                  <View key={stepIndex} style={styles.stepFormContainer}>
+                    <View style={styles.stepFormHeader}>
+                      <Text style={styles.stepFormTitle}>Step {stepIndex + 1}</Text>
+                      {customCollabForm.steps.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            const newSteps = customCollabForm.steps.filter((_, i) => i !== stepIndex);
+                            setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                          }}
+                        >
+                          <X size={16} color="#ef4444" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    
+                    <TextInput
+                      style={styles.formInput}
+                      value={step.title}
+                      onChangeText={(text) => {
+                        const newSteps = [...customCollabForm.steps];
+                        newSteps[stepIndex] = {...step, title: text};
+                        setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                      }}
+                      placeholder="Step title..."
+                      placeholderTextColor="#666"
+                    />
+                    
+                    <TextInput
+                      style={[styles.formInput, styles.textArea, {marginTop: 8}]}
+                      value={step.description}
+                      onChangeText={(text) => {
+                        const newSteps = [...customCollabForm.steps];
+                        newSteps[stepIndex] = {...step, description: text};
+                        setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                      }}
+                      placeholder="Step description..."
+                      placeholderTextColor="#666"
+                      multiline
+                      numberOfLines={2}
+                    />
+
+                    <Text style={styles.formSubtitle}>Success criteria for this step:</Text>
+                    {step.successCriteria.map((criteria, criteriaIndex) => (
+                      <View key={criteriaIndex} style={styles.criteriaInputContainer}>
+                        <TextInput
+                          style={[styles.formInput, {flex: 1}]}
+                          value={criteria}
+                          onChangeText={(text) => {
+                            const newSteps = [...customCollabForm.steps];
+                            const newCriteria = [...step.successCriteria];
+                            newCriteria[criteriaIndex] = text;
+                            newSteps[stepIndex] = {...step, successCriteria: newCriteria};
+                            setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                          }}
+                          placeholder="Success criteria..."
+                          placeholderTextColor="#666"
+                        />
+                        {step.successCriteria.length > 1 && (
+                          <TouchableOpacity
+                            style={styles.removeButton}
+                            onPress={() => {
+                              const newSteps = [...customCollabForm.steps];
+                              const newCriteria = step.successCriteria.filter((_, i) => i !== criteriaIndex);
+                              newSteps[stepIndex] = {...step, successCriteria: newCriteria};
+                              setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                            }}
+                          >
+                            <X size={16} color="#ef4444" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                    
+                    <TouchableOpacity
+                      style={styles.addButton}
+                      onPress={() => {
+                        const newSteps = [...customCollabForm.steps];
+                        newSteps[stepIndex] = {...step, successCriteria: [...step.successCriteria, '']};
+                        setCustomCollabForm(prev => ({...prev, steps: newSteps}));
+                      }}
+                    >
+                      <Plus size={16} color="#0077b5" />
+                      <Text style={styles.addButtonText}>Add criteria</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                
+                <TouchableOpacity
+                  style={styles.addStepButton}
+                  onPress={() => {
+                    setCustomCollabForm(prev => ({
+                      ...prev, 
+                      steps: [...prev.steps, { title: '', description: '', successCriteria: [''] }]
+                    }));
+                  }}
+                >
+                  <Plus size={20} color="#0077b5" />
+                  <Text style={styles.addStepButtonText}>Add Step</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Overall Success Criteria</Text>
+                <Text style={styles.formSubtitle}>What defines overall success for this collaboration?</Text>
+                {customCollabForm.successCriteria.map((criteria, index) => (
+                  <View key={index} style={styles.criteriaInputContainer}>
+                    <TextInput
+                      style={[styles.formInput, {flex: 1}]}
+                      value={criteria}
+                      onChangeText={(text) => {
+                        const newCriteria = [...customCollabForm.successCriteria];
+                        newCriteria[index] = text;
+                        setCustomCollabForm(prev => ({...prev, successCriteria: newCriteria}));
+                      }}
+                      placeholder="Overall success criteria..."
+                      placeholderTextColor="#666"
+                    />
+                    {customCollabForm.successCriteria.length > 1 && (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => {
+                          const newCriteria = customCollabForm.successCriteria.filter((_, i) => i !== index);
+                          setCustomCollabForm(prev => ({...prev, successCriteria: newCriteria}));
+                        }}
+                      >
+                        <X size={16} color="#ef4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => {
+                    setCustomCollabForm(prev => ({
+                      ...prev, 
+                      successCriteria: [...prev.successCriteria, '']
+                    }));
+                  }}
+                >
+                  <Plus size={16} color="#0077b5" />
+                  <Text style={styles.addButtonText}>Add criteria</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
       {/* Step Detail Modal */}
       <Modal
         visible={selectedStep !== null}
@@ -1060,6 +1372,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -1069,6 +1389,17 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#999',
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 119, 181, 0.1)',
+    borderWidth: 1,
+    borderColor: '#0077b5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -1576,5 +1907,124 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ccc',
     lineHeight: 22,
+  },
+  formGroup: {
+    marginBottom: 24,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#333',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  categoryOptionSelected: {
+    backgroundColor: '#0077b5',
+    borderColor: '#0077b5',
+  },
+  categoryOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ccc',
+  },
+  categoryOptionTextSelected: {
+    color: '#fff',
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
+  stepFormContainer: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  stepFormHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepFormTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  criteriaInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  removeButton: {
+    padding: 8,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ef4444',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0077b5',
+    gap: 8,
+    marginTop: 8,
+  },
+  addButtonText: {
+    fontSize: 14,
+    color: '#0077b5',
+    fontWeight: '600',
+  },
+  addStepButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#0077b5',
+    borderStyle: 'dashed',
+    gap: 8,
+    marginTop: 16,
+  },
+  addStepButtonText: {
+    fontSize: 16,
+    color: '#0077b5',
+    fontWeight: '600',
   },
 });

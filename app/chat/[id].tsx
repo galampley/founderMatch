@@ -10,8 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Modal,
+  Alert,
 } from 'react-native';
-import { ChevronLeft, Send, MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
+import { ChevronLeft, Send, UserPlus, Clock, Code, Target, Lightbulb, Users } from 'lucide-react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
 interface Message {
@@ -21,6 +23,73 @@ interface Message {
   isMe: boolean;
   isRead?: boolean;
 }
+
+interface Collab {
+  id: number;
+  title: string;
+  description: string;
+  duration: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  category: 'Technical' | 'Business' | 'Product' | 'Design';
+  icon: React.ReactNode;
+}
+
+const availableCollabs: Collab[] = [
+  {
+    id: 1,
+    title: 'Code Review Challenge',
+    description: 'Review each other\'s code samples and provide constructive feedback to assess technical compatibility.',
+    duration: '2-3 hours',
+    difficulty: 'Easy',
+    category: 'Technical',
+    icon: <Code size={24} color="#0077b5" />,
+  },
+  {
+    id: 2,
+    title: 'Mini Product Sprint',
+    description: 'Build a simple feature or prototype together over a weekend to test collaboration dynamics.',
+    duration: '2-3 days',
+    difficulty: 'Medium',
+    category: 'Product',
+    icon: <Target size={24} color="#0077b5" />,
+  },
+  {
+    id: 3,
+    title: 'Business Case Study',
+    description: 'Analyze a real business problem and present solutions together to evaluate strategic thinking.',
+    duration: '4-5 hours',
+    difficulty: 'Medium',
+    category: 'Business',
+    icon: <Lightbulb size={24} color="#0077b5" />,
+  },
+  {
+    id: 4,
+    title: 'Startup Pitch Workshop',
+    description: 'Develop and refine each other\'s startup ideas through structured feedback sessions.',
+    duration: '3-4 hours',
+    difficulty: 'Easy',
+    category: 'Business',
+    icon: <Users size={24} color="#0077b5" />,
+  },
+  {
+    id: 5,
+    title: 'Technical Architecture Design',
+    description: 'Collaborate on designing the technical architecture for a hypothetical or real project.',
+    duration: '3-4 hours',
+    difficulty: 'Hard',
+    category: 'Technical',
+    icon: <Code size={24} color="#0077b5" />,
+  },
+  {
+    id: 6,
+    title: 'Customer Interview Practice',
+    description: 'Conduct mock customer interviews to validate a business idea and practice user research skills.',
+    duration: '2-3 hours',
+    difficulty: 'Easy',
+    category: 'Product',
+    icon: <Target size={24} color="#0077b5" />,
+  },
+];
 
 const dummyMessages: { [key: string]: Message[] } = {
   '1': [
@@ -122,6 +191,8 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [messages, setMessages] = useState<Message[]>(dummyMessages[id || '1'] || []);
   const [newMessage, setNewMessage] = useState('');
+  const [showCollabModal, setShowCollabModal] = useState(false);
+  const [selectedCollab, setSelectedCollab] = useState<Collab | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   
   const userProfile = userProfiles[id || '1'];
@@ -144,6 +215,59 @@ export default function ChatScreen() {
       
       setMessages(prev => [...prev, message]);
       setNewMessage('');
+    }
+  };
+
+  const handleSendCollab = () => {
+    setShowCollabModal(true);
+  };
+
+  const handleCollabSelect = (collab: Collab) => {
+    setSelectedCollab(collab);
+  };
+
+  const handleSendCollabInvite = () => {
+    if (!selectedCollab) {
+      Alert.alert('No Collaboration Selected', 'Please select a collaboration to send.');
+      return;
+    }
+    
+    Alert.alert(
+      'Collaboration Invite Sent!', 
+      `You've sent a "${selectedCollab.title}" collaboration invite to ${userProfile.name}.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowCollabModal(false);
+            setSelectedCollab(null);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCloseCollabModal = () => {
+    setShowCollabModal(false);
+    setSelectedCollab(null);
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return '#10b981';
+      case 'Medium': return '#f59e0b';
+      case 'Hard': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'Technical': return '#3b82f6';
+      case 'Business': return '#8b5cf6';
+      case 'Product': return '#10b981';
+      case 'Design': return '#f59e0b';
+      default: return '#6b7280';
     }
   };
 
@@ -203,9 +327,12 @@ export default function ChatScreen() {
           </View>
         </View>
         
-        <TouchableOpacity style={styles.moreButton}>
-          <MoreHorizontal size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.sendCollabButton} onPress={handleSendCollab}>
+            <UserPlus size={16} color="#0077b5" />
+            <Text style={styles.sendCollabText}>Send Collab</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Messages */}
@@ -240,6 +367,79 @@ export default function ChatScreen() {
           <Send size={20} color={newMessage.trim() ? "#fff" : "#666"} />
         </TouchableOpacity>
       </View>
+
+      {/* Collaboration Selection Modal */}
+      <Modal
+        visible={showCollabModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseCollabModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={handleCloseCollabModal}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Send Collaboration to {userProfile?.name}</Text>
+            <TouchableOpacity 
+              onPress={handleSendCollabInvite}
+              disabled={!selectedCollab}
+              style={[styles.sendButton, !selectedCollab && styles.sendButtonDisabled]}
+            >
+              <Send size={20} color={selectedCollab ? "#0077b5" : "#666"} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.collabSectionTitle}>Choose a collaboration</Text>
+            <Text style={styles.collabSectionSubtitle}>Select a collaboration method to propose to {userProfile?.name}</Text>
+            
+            {availableCollabs.map((collab) => (
+              <TouchableOpacity
+                key={collab.id}
+                style={[
+                  styles.collabCard,
+                  selectedCollab?.id === collab.id && styles.collabCardSelected
+                ]}
+                onPress={() => handleCollabSelect(collab)}
+              >
+                <View style={styles.collabCardHeader}>
+                  <View style={styles.collabIcon}>
+                    {collab.icon}
+                  </View>
+                  <View style={styles.collabCardInfo}>
+                    <Text style={[
+                      styles.collabCardTitle,
+                      selectedCollab?.id === collab.id && styles.collabCardTitleSelected
+                    ]}>
+                      {collab.title}
+                    </Text>
+                    <Text style={styles.collabCardDescription}>{collab.description}</Text>
+                  </View>
+                  {selectedCollab?.id === collab.id && (
+                    <View style={styles.selectedIndicator}>
+                      <Text style={styles.selectedCheck}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.collabCardMeta}>
+                  <View style={styles.collabMetaItem}>
+                    <Clock size={14} color="#999" />
+                    <Text style={styles.collabMetaText}>{collab.duration}</Text>
+                  </View>
+                  <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(collab.difficulty) }]}>
+                    <Text style={styles.difficultyText}>{collab.difficulty}</Text>
+                  </View>
+                  <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(collab.category) }]}>
+                    <Text style={styles.categoryText}>{collab.category}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -374,5 +574,162 @@ const styles = StyleSheet.create({
   },
   sendButtonInactive: {
     backgroundColor: '#333',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sendCollabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 119, 181, 0.1)',
+    borderWidth: 1,
+    borderColor: '#0077b5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    gap: 4,
+  },
+  sendCollabText: {
+    fontSize: 12,
+    color: '#0077b5',
+    fontWeight: '600',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: '#2a2a2a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  sendButton: {
+    padding: 4,
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  collabSectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  collabSectionSubtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 24,
+  },
+  collabCard: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  collabCardSelected: {
+    borderColor: '#0077b5',
+    backgroundColor: 'rgba(0, 119, 181, 0.05)',
+  },
+  collabCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  collabIcon: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#333',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  collabCardInfo: {
+    flex: 1,
+  },
+  collabCardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  collabCardTitleSelected: {
+    color: '#0077b5',
+  },
+  collabCardDescription: {
+    fontSize: 14,
+    color: '#ccc',
+    lineHeight: 20,
+  },
+  selectedIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0077b5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  selectedCheck: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  collabCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  collabMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  collabMetaText: {
+    fontSize: 12,
+    color: '#999',
+  },
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  difficultyText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

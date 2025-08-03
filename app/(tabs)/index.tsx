@@ -21,7 +21,7 @@ import Animated, {
   runOnJS,
   interpolate,
 } from 'react-native-reanimated';
-import { Heart, X, MapPin, Briefcase, Lightbulb, Users, MoveHorizontal as MoreHorizontal, Send } from 'lucide-react-native';
+import { Heart, X, MapPin, Briefcase, Lightbulb, Users, Send } from 'lucide-react-native';
 import { useUser } from '@/contexts/UserContext';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
@@ -43,6 +43,7 @@ interface UserProfile {
   exploring: string;
   interestedIn: string[];
 }
+
 
 const sampleProfiles: UserProfile[] = [
   {
@@ -209,6 +210,7 @@ export default function DiscoverScreen() {
     setSelectedSection(null);
   };
 
+
   const animatedStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
       translateX.value,
@@ -293,7 +295,6 @@ export default function DiscoverScreen() {
         
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>Find your perfect co-founder</Text>
         </View>
 
         <View style={styles.cardContainer}>
@@ -332,9 +333,6 @@ export default function DiscoverScreen() {
                     </View>
                     <Text style={styles.companyText}>{currentProfile.title} • {currentProfile.company}</Text>
                   </View>
-                  <TouchableOpacity style={styles.moreButton}>
-                    <MoreHorizontal size={20} color="#999" />
-                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -476,6 +474,7 @@ export default function DiscoverScreen() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }
