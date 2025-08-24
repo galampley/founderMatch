@@ -5,14 +5,19 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string; next?: string }>();
+  const params = useLocalSearchParams<{ code?: string | string[]; next?: string | string[] }>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handle = async () => {
       try {
-        const code = typeof params.code === 'string' ? params.code : undefined;
-        const next = typeof params.next === 'string' ? params.next : '/onboarding';
+        const getParam = (v: string | string[] | undefined): string | undefined => {
+          if (!v) return undefined;
+          if (Array.isArray(v)) return v[0];
+          return v;
+        };
+        const code = getParam(params.code);
+        const next = getParam(params.next) || '/onboarding';
 
         if (!code) {
           setError('Missing authorization code.');
