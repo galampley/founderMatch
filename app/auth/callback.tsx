@@ -12,7 +12,7 @@ export default function AuthCallback() {
     const handle = async () => {
       try {
         const code = typeof params.code === 'string' ? params.code : undefined;
-        const next = typeof params.next === 'string' ? params.next : '/';
+        const next = typeof params.next === 'string' ? params.next : '/onboarding';
 
         if (!code) {
           setError('Missing authorization code.');

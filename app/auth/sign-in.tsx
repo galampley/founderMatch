@@ -17,7 +17,9 @@ export default function SignIn() {
     try {
       setLoading(true);
       const origin = globalThis.location?.origin ?? '';
-      const redirectTo = `${origin}/auth/callback`;
+      // After successful exchange, land inside the app (onboarding entry)
+      const next = '/onboarding';
+      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
