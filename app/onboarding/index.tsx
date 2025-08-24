@@ -30,6 +30,10 @@ export default function OnboardingWelcome() {
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.push('/auth/sign-in')}>
+          <Text style={styles.secondaryLink}>Already have an account? Sign in</Text>
+        </TouchableOpacity>
         
         <Text style={styles.disclaimer}>
           By continuing, you agree to our Terms of Service and Privacy Policy
@@ -84,5 +88,11 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  secondaryLink: {
+    fontSize: 14,
+    color: '#0077b5',
+    fontWeight: '600',
+    marginBottom: 16,
   },
 });
