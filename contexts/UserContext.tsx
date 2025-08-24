@@ -1,7 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { UserProfile } from '@/types/user';
-import { getCurrentUserProfile, upsertCurrentUserProfile } from '@/lib/profileService';
-import { supabase } from '@/lib/supabaseClient';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -12,23 +10,25 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-
-  // Load profile on session
-  useEffect(() => {
-    const init = async () => {
-      const profile = await getCurrentUserProfile();
-      setUser(profile);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    // Initialize with a basic user object
+    return {
+      id: '1',
+      name: '',
+      age: 0,
+      location: '',
+      photos: [],
+      prompts: [],
+      basics: {
+        height: '',
+        education: '',
+        jobTitle: '',
+        religion: '',
+        lookingFor: '',
+      },
+      isOnboardingComplete: false,
     };
-    init();
-
-    // react to auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async () => {
-      const profile = await getCurrentUserProfile();
-      setUser(profile);
-    });
-    return () => { sub.subscription?.unsubscribe(); };
-  }, []);
+  });
 
   const updateUser = (updates: Partial<UserProfile>) => {
     console.log('UserContext: Updating user with:', updates);
@@ -36,13 +36,34 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     setUser(prev => {
       if (!prev) {
-        return { id: '', name: '', age: 0, location: '', photos: [], prompts: [], basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' }, isOnboardingComplete: false, ...updates };
+        // If no previous user, create new one with updates
+        return {
+          id: '1',
+          name: '',
+          age: 0,
+          location: '',
+          photos: [],
+          prompts: [],
+          basics: {
+            height: '',
+            education: '',
+            jobTitle: '',
+            religion: '',
+            lookingFor: '',
+          },
+          isOnboardingComplete: false,
+          ...updates,
+        };
       }
       return { ...prev, ...updates };
     });
-
-    // Persist to Supabase (fire-and-forget)
-    upsertCurrentUserProfile(updates).catch(() => {});
+    
+    setTimeout(() => {
+      setUser(current => {
+        console.log('UserContext: User after update:', current);
+        return current;
+      });
+    }, 100);
   };
 
   return (

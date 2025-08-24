@@ -5,19 +5,14 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string | string[]; next?: string | string[] }>();
+  const params = useLocalSearchParams<{ code?: string; next?: string }>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handle = async () => {
       try {
-        const getParam = (v: string | string[] | undefined): string | undefined => {
-          if (!v) return undefined;
-          if (Array.isArray(v)) return v[0];
-          return v;
-        };
-        const code = getParam(params.code);
-        const next = getParam(params.next) || '/onboarding';
+        const code = typeof params.code === 'string' ? params.code : undefined;
+        const next = typeof params.next === 'string' ? params.next : '/onboarding';
 
         if (!code) {
           setError('Missing authorization code.');
@@ -30,9 +25,7 @@ export default function AuthCallback() {
           return;
         }
 
-        // Type cast because `next` is computed dynamically and expo-router
-        // has a very strict union for known routes.
-        router.replace(String(next) as any);
+        router.replace(String(next));
       } catch (e: any) {
         setError(e?.message ?? 'Unexpected error.');
       }
