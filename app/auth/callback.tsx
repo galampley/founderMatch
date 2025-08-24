@@ -11,6 +11,8 @@ export default function AuthCallback() {
   useEffect(() => {
     const handle = async () => {
       try {
+        console.log('Auth callback starting with params:', params);
+        
         const getParam = (v: string | string[] | undefined): string | undefined => {
           if (!v) return undefined;
           if (Array.isArray(v)) return v[0];
@@ -19,21 +21,29 @@ export default function AuthCallback() {
         const code = getParam(params.code);
         const next = getParam(params.next) || '/onboarding';
 
+        console.log('Extracted code:', code ? 'present' : 'missing');
+        console.log('Next route:', next);
+
         if (!code) {
+          console.error('No authorization code found');
           setError('Missing authorization code.');
           return;
         }
 
+        console.log('Exchanging code for session...');
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
+          console.error('Session exchange failed:', exchangeError);
           setError(exchangeError.message);
           return;
         }
 
+        console.log('Session exchange successful, navigating to:', next);
         // Type cast because `next` is computed dynamically and expo-router
         // has a very strict union for known routes.
         router.replace(String(next) as any);
       } catch (e: any) {
+        console.error('Auth callback error:', e);
         setError(e?.message ?? 'Unexpected error.');
       }
     };
