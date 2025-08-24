@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string | string[]; next?: string | string[] }>();
+  const params = useLocalSearchParams<{ code?: string; next?: string }>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -13,13 +13,8 @@ export default function AuthCallback() {
       try {
         console.log('Auth callback starting with params:', params);
         
-        const getParam = (v: string | string[] | undefined): string | undefined => {
-          if (!v) return undefined;
-          if (Array.isArray(v)) return v[0];
-          return v;
-        };
-        const code = getParam(params.code);
-        const next = getParam(params.next) || '/onboarding';
+        const code = typeof params.code === 'string' ? params.code : undefined;
+        const next = typeof params.next === 'string' ? params.next : '/onboarding';
 
         console.log('Extracted code:', code ? 'present' : 'missing');
         console.log('Next route:', next);
