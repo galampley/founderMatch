@@ -16,10 +16,13 @@ export default function SignIn() {
     }
     try {
       setLoading(true);
-      const origin = globalThis.location?.origin ?? '';
-      // After successful exchange, land inside the app (onboarding entry)
+      // Always redirect magic links to the dedicated app domain, not the current origin.
+      // Configure EXPO_PUBLIC_APP_BASE_URL in Vercel (e.g., https://bettermatchme.vercel.app)
+      const appBaseUrl =
+        (process.env.EXPO_PUBLIC_APP_BASE_URL as string | undefined) ||
+        (globalThis.location?.origin ?? '');
       const next = '/onboarding';
-      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+      const redirectTo = `${appBaseUrl}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
