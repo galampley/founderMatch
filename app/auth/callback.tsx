@@ -30,7 +30,9 @@ export default function AuthCallback() {
           return;
         }
 
-        router.replace(String(next));
+        // Type cast because `next` is computed dynamically and expo-router
+        // has a very strict union for known routes.
+        router.replace(String(next) as any);
       } catch (e: any) {
         setError(e?.message ?? 'Unexpected error.');
       }
