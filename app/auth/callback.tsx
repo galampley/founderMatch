@@ -7,8 +7,11 @@ export default function AuthCallback() {
   const router = useRouter();
   const params = useLocalSearchParams<{ code?: string; next?: string }>();
   const [error, setError] = useState<string | null>(null);
+  const [didExchange, setDidExchange] = useState(false);
 
   useEffect(() => {
+    if (didExchange) return;
+
     const handle = async () => {
       try {
         console.log('Auth callback starting with params:', params);
@@ -26,6 +29,7 @@ export default function AuthCallback() {
         }
 
         console.log('Exchanging code for session...');
+        setDidExchange(true);
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
           console.error('Session exchange failed:', exchangeError);
@@ -43,7 +47,7 @@ export default function AuthCallback() {
       }
     };
     handle();
-  }, [params]);
+  }, [params, didExchange]);
 
   if (error) {
     return (

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -11,6 +12,10 @@ export default function RootLayout() {
   useFrameworkReady();
 
   useEffect(() => {
+    // On web, the router already handles the full URL. Avoid re-parsing and re-navigating
+    // which can cause duplicate navigations/remounts of the auth callback screen.
+    if (Platform.OS === 'web') return;
+
     const handleDeepLink = (url: string) => {
       console.log('Deep link received:', url);
       
