@@ -26,19 +26,49 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.log('UserContext init: session data:', data.session?.user?.id || 'no session');
         if (!mounted) return;
         if (data.session) {
-          console.log('UserContext init: creating empty profile for user:', data.session.user.id);
-          const emptyProfile = {
-            id: data.session.user.id,
-            name: '',
-            age: 0,
-            location: '',
-            photos: [],
-            prompts: [],
-            basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
-            isOnboardingComplete: false,
-          };
+          console.log('UserContext init: loading profile for user:', data.session.user.id);
+          // Load existing profile data from Supabase
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.session.user.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error loading profile on init:', error);
+          }
+          
+          let profile;
+          if (profileData) {
+            // Map database row to UserProfile
+            profile = {
+              id: data.session.user.id,
+              name: profileData.name || '',
+              age: profileData.age || 0,
+              location: profileData.location || '',
+              photos: profileData.photos || [],
+              prompts: profileData.prompts || [],
+              basics: profileData.basics || { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+              isOnboardingComplete: profileData.is_onboarding_complete || false,
+            };
+            console.log('UserContext init: loaded existing profile:', profile);
+          } else {
+            // No profile exists, create empty one
+            profile = {
+              id: data.session.user.id,
+              name: '',
+              age: 0,
+              location: '',
+              photos: [],
+              prompts: [],
+              basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+              isOnboardingComplete: false,
+            };
+            console.log('UserContext init: creating empty profile');
+          }
+          
           if (!mounted) return;
-          setUser(emptyProfile);
+          setUser(profile);
         } else {
           console.log('UserContext init: no session, setting user to null');
           setUser(null);
@@ -53,17 +83,47 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('UserContext auth change:', event, session?.user?.id || 'no user');
       if (session?.user?.id) {
-        const emptyProfile = {
-          id: session.user.id,
-          name: '',
-          age: 0,
-          location: '',
-          photos: [],
-          prompts: [],
-          basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
-          isOnboardingComplete: false,
-        };
-        if (mounted) setUser(emptyProfile);
+        // Load existing profile data from Supabase
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error loading profile on auth change:', error);
+        }
+        
+        let profile;
+        if (data) {
+          // Map database row to UserProfile
+          profile = {
+            id: session.user.id,
+            name: data.name || '',
+            age: data.age || 0,
+            location: data.location || '',
+            photos: data.photos || [],
+            prompts: data.prompts || [],
+            basics: data.basics || { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+            isOnboardingComplete: data.is_onboarding_complete || false,
+          };
+          console.log('UserContext auth change: loaded existing profile:', profile);
+        } else {
+          // No profile exists, create empty one
+          profile = {
+            id: session.user.id,
+            name: '',
+            age: 0,
+            location: '',
+            photos: [],
+            prompts: [],
+            basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+            isOnboardingComplete: false,
+          };
+          console.log('UserContext auth change: creating empty profile');
+        }
+        
+        if (mounted) setUser(profile);
       } else {
         if (mounted) setUser(null);
       }
