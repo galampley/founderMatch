@@ -26,10 +26,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
         console.log('UserContext init: session data:', data.session?.user?.id || 'no session');
         if (!mounted) return;
         if (data.session) {
-          const profile = await getCurrentUserProfile();
-          console.log('UserContext init: profile loaded:', profile);
+          console.log('UserContext init: creating empty profile for user:', data.session.user.id);
+          const emptyProfile = {
+            id: data.session.user.id,
+            name: '',
+            age: 0,
+            location: '',
+            photos: [],
+            prompts: [],
+            basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+            isOnboardingComplete: false,
+          };
           if (!mounted) return;
-          setUser(profile);
+          setUser(emptyProfile);
         } else {
           console.log('UserContext init: no session, setting user to null');
           setUser(null);
@@ -43,9 +52,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // react to auth changes
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('UserContext auth change:', event, session?.user?.id || 'no user');
-      const profile = await getCurrentUserProfile();
-      console.log('UserContext auth change: profile loaded:', profile);
-      if (mounted) setUser(profile);
+      if (session?.user?.id) {
+        const emptyProfile = {
+          id: session.user.id,
+          name: '',
+          age: 0,
+          location: '',
+          photos: [],
+          prompts: [],
+          basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' },
+          isOnboardingComplete: false,
+        };
+        if (mounted) setUser(emptyProfile);
+      } else {
+        if (mounted) setUser(null);
+      }
     });
     return () => { mounted = false; sub.subscription?.unsubscribe(); };
   }, []);
@@ -56,8 +77,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     // Get the current authenticated user ID
     const { data: auth } = await supabase.auth.getUser();
-    const userId = auth.user?.id || '';
+    const userId = auth.user?.id;
+    console.log('UserContext: Auth user ID:', userId);
     
+    if (!userId) {
+      console.error('UserContext: No authenticated user found');
+      return;
+    }
+    
+    // Update local state
     setUser(prev => {
       if (!prev) {
         return { id: userId, name: '', age: 0, location: '', photos: [], prompts: [], basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' }, isOnboardingComplete: false, ...updates };
@@ -65,10 +93,31 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return { ...prev, id: userId, ...updates };
     });
 
-    // Persist to Supabase (fire-and-forget)
-    upsertCurrentUserProfile(updates).catch((error) => {
+    // Persist directly to Supabase
+    try {
+      const row: Record<string, unknown> = { id: userId };
+      if (typeof updates.name !== 'undefined') row.name = updates.name;
+      if (typeof updates.age !== 'undefined') row.age = updates.age;
+      if (typeof updates.location !== 'undefined') row.location = updates.location;
+      if (typeof updates.photos !== 'undefined') row.photos = updates.photos;
+      if (typeof updates.prompts !== 'undefined') row.prompts = updates.prompts;
+      if (typeof updates.basics !== 'undefined') row.basics = updates.basics;
+      if (typeof updates.isOnboardingComplete !== 'undefined') {
+        row.is_onboarding_complete = updates.isOnboardingComplete;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(row, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Failed to save profile data:', error);
+      } else {
+        console.log('Profile data saved successfully');
+      }
+    } catch (error) {
       console.error('Failed to save profile data:', error);
-    });
+    }
   };
 
   return (
