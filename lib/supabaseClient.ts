@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
     // Use PKCE for OAuth/magic link flows and let the callback route handle URL parsing
     flowType: 'pkce',
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
     autoRefreshToken: true,
     persistSession: true,
   },
