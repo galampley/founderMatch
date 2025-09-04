@@ -65,6 +65,18 @@ export default function AuthCallback() {
     return () => { mounted = false; };
   }, [params]);
 
+  // Also listen for auth state changes and navigate when signed in
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        const next = typeof (params as any).next === 'string' ? (params as any).next : '/onboarding';
+        console.log('Auth state change -> signed in, navigating to:', next);
+        router.replace(String(next) as any);
+      }
+    });
+    return () => { sub.subscription?.unsubscribe(); };
+  }, [params]);
+
   if (error) {
     return (
       <View style={styles.container}>
