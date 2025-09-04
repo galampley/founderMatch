@@ -23,12 +23,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         const { data } = await supabase.auth.getSession();
+        console.log('UserContext init: session data:', data.session?.user?.id || 'no session');
         if (!mounted) return;
         if (data.session) {
           const profile = await getCurrentUserProfile();
+          console.log('UserContext init: profile loaded:', profile);
           if (!mounted) return;
           setUser(profile);
         } else {
+          console.log('UserContext init: no session, setting user to null');
           setUser(null);
         }
       } finally {
@@ -38,8 +41,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
     init();
 
     // react to auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('UserContext auth change:', event, session?.user?.id || 'no user');
       const profile = await getCurrentUserProfile();
+      console.log('UserContext auth change: profile loaded:', profile);
       if (mounted) setUser(profile);
     });
     return () => { mounted = false; sub.subscription?.unsubscribe(); };

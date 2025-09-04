@@ -57,7 +57,11 @@ function mapRowToUserProfile(row: DbProfileRow, id: string): UserProfile {
 export async function getCurrentUserProfile(): Promise<UserProfile | null> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
-  if (!uid) return null;
+  console.log('getCurrentUserProfile: user ID:', uid);
+  if (!uid) {
+    console.log('getCurrentUserProfile: no user ID, returning null');
+    return null;
+  }
 
   const { data, error } = await supabase
     .from('profiles')
@@ -71,6 +75,7 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
   }
 
   if (!data) {
+    console.log('getCurrentUserProfile: no profile data, creating empty profile for user:', uid);
     return { ...emptyUser, id: uid };
   }
 
