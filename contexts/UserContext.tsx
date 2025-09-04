@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 interface UserContextType {
   user: UserProfile | null;
   setUser: (user: UserProfile | null) => void;
-  updateUser: (updates: Partial<UserProfile>) => void;
+  updateUser: (updates: Partial<UserProfile>) => Promise<void>;
   isReady: boolean;
 }
 
@@ -45,15 +45,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return () => { mounted = false; sub.subscription?.unsubscribe(); };
   }, []);
 
-  const updateUser = (updates: Partial<UserProfile>) => {
+  const updateUser = async (updates: Partial<UserProfile>) => {
     console.log('UserContext: Updating user with:', updates);
     console.log('UserContext: Current user before update:', user);
     
+    // Get the current authenticated user ID
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id || '';
+    
     setUser(prev => {
       if (!prev) {
-        return { id: '', name: '', age: 0, location: '', photos: [], prompts: [], basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' }, isOnboardingComplete: false, ...updates };
+        return { id: userId, name: '', age: 0, location: '', photos: [], prompts: [], basics: { height: '', education: '', jobTitle: '', religion: '', lookingFor: '' }, isOnboardingComplete: false, ...updates };
       }
-      return { ...prev, ...updates };
+      return { ...prev, id: userId, ...updates };
     });
 
     // Persist to Supabase (fire-and-forget)
