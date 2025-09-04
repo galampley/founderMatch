@@ -80,7 +80,12 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
 export async function upsertCurrentUserProfile(updates: Partial<UserProfile>): Promise<UserProfile | null> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
-  if (!uid) return null;
+  console.log('upsertCurrentUserProfile: auth data:', auth);
+  console.log('upsertCurrentUserProfile: user ID:', uid);
+  if (!uid) {
+    console.error('upsertCurrentUserProfile: No authenticated user');
+    return null;
+  }
 
   // Prepare row to upsert
   const row: Record<string, unknown> = { id: uid };

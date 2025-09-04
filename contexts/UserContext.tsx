@@ -57,7 +57,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
     });
 
     // Persist to Supabase (fire-and-forget)
-    upsertCurrentUserProfile(updates).catch(() => {});
+    upsertCurrentUserProfile(updates).catch((error) => {
+      console.error('Failed to save profile data:', error);
+    });
   };
 
   return (
