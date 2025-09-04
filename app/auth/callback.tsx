@@ -49,6 +49,22 @@ export default function AuthCallback() {
     handle();
   }, [params, didExchange]);
 
+  // Fallback: if a session already exists (e.g., exchange completed but UI missed it), navigate on sight
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      const session = data.session;
+      if (session) {
+        const next = typeof (params as any).next === 'string' ? (params as any).next : '/onboarding';
+        console.log('Session detected without visible exchange, navigating to:', next);
+        router.replace(String(next) as any);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [params]);
+
   if (error) {
     return (
       <View style={styles.container}>
