@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -16,11 +17,12 @@ export default function SignIn() {
     }
     try {
       setLoading(true);
-      // Always redirect magic links to the dedicated app domain, not the current origin.
-      // Configure EXPO_PUBLIC_APP_BASE_URL in Vercel (e.g., https://bettermatchme.vercel.app)
+      // Web must use the SAME ORIGIN that initiated sign-in to keep the PKCE code_verifier.
+      // Native uses the configured public app base URL.
       const appBaseUrl =
-        (process.env.EXPO_PUBLIC_APP_BASE_URL as string | undefined) ||
-        (globalThis.location?.origin ?? '');
+        Platform.OS === 'web'
+          ? (globalThis.location?.origin ?? '')
+          : ((process.env.EXPO_PUBLIC_APP_BASE_URL as string | undefined) ?? '');
       const next = '/onboarding';
       const redirectTo = `${appBaseUrl}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error } = await supabase.auth.signInWithOtp({
