@@ -7,27 +7,42 @@ interface UserContextType {
   user: UserProfile | null;
   setUser: (user: UserProfile | null) => void;
   updateUser: (updates: Partial<UserProfile>) => void;
+  isReady: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
-  // Load profile on session
+  // Load profile after session rehydration and react to auth changes
   useEffect(() => {
+    let mounted = true;
+
     const init = async () => {
-      const profile = await getCurrentUserProfile();
-      setUser(profile);
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (data.session) {
+          const profile = await getCurrentUserProfile();
+          if (!mounted) return;
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) setIsReady(true);
+      }
     };
     init();
 
     // react to auth changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async () => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event) => {
       const profile = await getCurrentUserProfile();
-      setUser(profile);
+      if (mounted) setUser(profile);
     });
-    return () => { sub.subscription?.unsubscribe(); };
+    return () => { mounted = false; sub.subscription?.unsubscribe(); };
   }, []);
 
   const updateUser = (updates: Partial<UserProfile>) => {
@@ -46,7 +61,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, updateUser }}>
+    <UserContext.Provider value={{ user, setUser, updateUser, isReady }}>
       {children}
     </UserContext.Provider>
   );

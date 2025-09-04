@@ -83,16 +83,16 @@ export async function upsertCurrentUserProfile(updates: Partial<UserProfile>): P
   if (!uid) return null;
 
   // Prepare row to upsert
-  const row = {
-    id: uid,
-    name: updates.name,
-    age: updates.age,
-    location: updates.location,
-    photos: updates.photos,
-    prompts: updates.prompts,
-    basics: updates.basics,
-    is_onboarding_complete: updates.isOnboardingComplete,
-  };
+  const row: Record<string, unknown> = { id: uid };
+  if (typeof updates.name !== 'undefined') row.name = updates.name;
+  if (typeof updates.age !== 'undefined') row.age = updates.age;
+  if (typeof updates.location !== 'undefined') row.location = updates.location;
+  if (typeof updates.photos !== 'undefined') row.photos = updates.photos;
+  if (typeof updates.prompts !== 'undefined') row.prompts = updates.prompts;
+  if (typeof updates.basics !== 'undefined') row.basics = updates.basics;
+  if (typeof updates.isOnboardingComplete !== 'undefined') {
+    row.is_onboarding_complete = updates.isOnboardingComplete;
+  }
 
   const { data, error } = await supabase
     .from('profiles')

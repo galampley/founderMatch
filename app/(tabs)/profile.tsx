@@ -17,7 +17,7 @@ import { useUser } from '@/contexts/UserContext';
 
 
 export default function ProfileScreen() {
-  const { user } = useUser();
+  const { user, isReady } = useUser();
   const { updateUser } = useUser();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<any>(null);
@@ -227,15 +227,25 @@ export default function ProfileScreen() {
     </View>
   );
 
-  // Show message if no user data instead of redirecting
+  // Wait for initial auth/profile bootstrap
+  if (!isReady) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: '#fff' }}>Loading…</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Show message if no user data after ready
   if (!user) {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>My Profile</Text>
-          </View>
+          <Text style={styles.headerTitle}>My Profile</Text>
         </View>
         <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
           <Text style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>No profile data</Text>
@@ -374,7 +384,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={styles.textInput}
                 value={editingData?.name || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, name: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, name: text }))}
                 placeholder="Enter your name"
                 placeholderTextColor="#666"
               />
@@ -384,7 +394,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={styles.textInput}
                 value={editingData?.age || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, age: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, age: text }))}
                 placeholder="Enter your age"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
@@ -395,7 +405,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={styles.textInput}
                 value={editingData?.location || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, location: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, location: text }))}
                 placeholder="City, State"
                 placeholderTextColor="#666"
               />
@@ -426,14 +436,12 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 style={styles.textInput}
                 onPress={() => {
-                  Alert.alert(
-                    'Select Height',
-                    '',
-                    heightOptions.map(height => ({
-                      text: height,
-                      onPress: () => setEditingData(prev => ({ ...prev, height }))
-                    })).concat([{ text: 'Cancel', style: 'cancel' }])
-                  );
+                  const buttons: Array<{ text: string; onPress: () => void }> = heightOptions.map((height) => ({
+                    text: height,
+                    onPress: () => setEditingData((prev: any) => ({ ...prev, height }))
+                  }));
+                  buttons.push({ text: 'Cancel', onPress: () => {} });
+                  Alert.alert('Select Height', '', buttons as any);
                 }}
               >
                 <Text style={[styles.inputText, !editingData?.height && styles.placeholderText]}>
@@ -446,7 +454,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={styles.textInput}
                 value={editingData?.education || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, education: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, education: text }))}
                 placeholder="School or degree"
                 placeholderTextColor="#666"
               />
@@ -456,7 +464,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={styles.textInput}
                 value={editingData?.jobTitle || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, jobTitle: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, jobTitle: text }))}
                 placeholder="What do you do?"
                 placeholderTextColor="#666"
               />
@@ -466,14 +474,12 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 style={styles.textInput}
                 onPress={() => {
-                  Alert.alert(
-                    'Select Religion',
-                    '',
-                    religionOptions.map(religion => ({
-                      text: religion,
-                      onPress: () => setEditingData(prev => ({ ...prev, religion }))
-                    })).concat([{ text: 'Cancel', style: 'cancel' }])
-                  );
+                  const buttons: Array<{ text: string; onPress: () => void }> = religionOptions.map((religion) => ({
+                    text: religion,
+                    onPress: () => setEditingData((prev: any) => ({ ...prev, religion }))
+                  }));
+                  buttons.push({ text: 'Cancel', onPress: () => {} });
+                  Alert.alert('Select Religion', '', buttons as any);
                 }}
               >
                 <Text style={[styles.inputText, !editingData?.religion && styles.placeholderText]}>
@@ -486,14 +492,12 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 style={styles.textInput}
                 onPress={() => {
-                  Alert.alert(
-                    'Looking For',
-                    '',
-                    lookingForOptions.map(option => ({
-                      text: option,
-                      onPress: () => setEditingData(prev => ({ ...prev, lookingFor: option }))
-                    })).concat([{ text: 'Cancel', style: 'cancel' }])
-                  );
+                  const buttons: Array<{ text: string; onPress: () => void }> = lookingForOptions.map((option) => ({
+                    text: option,
+                    onPress: () => setEditingData((prev: any) => ({ ...prev, lookingFor: option }))
+                  }));
+                  buttons.push({ text: 'Cancel', onPress: () => {} });
+                  Alert.alert('Looking For', '', buttons as any);
                 }}
               >
                 <Text style={[styles.inputText, !editingData?.lookingFor && styles.placeholderText]}>
@@ -533,7 +537,7 @@ export default function ProfileScreen() {
               <TextInput
                 style={[styles.textInput, styles.multilineInput]}
                 value={editingData?.answer || ''}
-                onChangeText={(text) => setEditingData(prev => ({ ...prev, answer: text }))}
+                onChangeText={(text) => setEditingData((prev: any) => ({ ...prev, answer: text }))}
                 placeholder="Your answer..."
                 placeholderTextColor="#666"
                 multiline
