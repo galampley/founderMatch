@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function AuthCallback() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ code?: string; next?: string }>();
+  const params = useLocalSearchParams<{ code?: string; access_token?: string; next?: string }>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,54 +15,76 @@ export default function AuthCallback() {
       try {
         console.log('Auth callback - starting handle function');
         const code = typeof params.code === 'string' ? params.code : undefined;
+        const access_token = typeof params.access_token === 'string' ? params.access_token : undefined;
         const rawNext = typeof params.next === 'string' ? params.next : '/onboarding';
         const decodedNext = decodeURIComponent(rawNext);
         const next = decodedNext.startsWith('/') ? decodedNext : `/${decodedNext}`;
         
         console.log('Auth callback - extracted code:', code);
+        console.log('Auth callback - extracted access_token:', !!access_token);
         console.log('Auth callback - next path:', next);
 
-        if (!code) {
-          console.error('Auth callback - missing code');
-          setError('Missing authorization code.');
+        let session = null;
+
+        if (access_token) {
+          // Implicit flow - tokens provided directly in URL
+          console.log('Auth callback - using implicit flow (access_token found)');
+          
+          // Let Supabase handle the implicit flow automatically since detectSessionInUrl: true
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait for Supabase to process
+          
+          const { data: { session: implicitSession }, error: sessionError } = await supabase.auth.getSession();
+          console.log('Auth callback - implicit session result:', !!implicitSession, sessionError);
+          
+          if (implicitSession) {
+            session = implicitSession;
+            console.log('Auth callback - implicit session found:', implicitSession.user.id);
+          } else {
+            console.error('Auth callback - implicit flow failed to create session');
+            setError('Authentication failed: could not create session from token');
+            return;
+          }
+        } else if (code) {
+          // PKCE flow - exchange code for session
+          console.log('Auth callback - using PKCE flow (code found)');
+          console.log('Auth callback - starting exchangeCodeForSession...');
+          
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          console.log('Auth callback - exchange completed');
+          console.log('Auth callback - exchange result:', !!data?.session, exchangeError);
+          
+          if (exchangeError) {
+            console.error('Auth callback - exchange error:', exchangeError);
+            setError(exchangeError.message);
+            return;
+          }
+
+          session = data?.session || null;
+        } else {
+          console.error('Auth callback - no auth code or token found');
+          setError('Missing authorization code or token.');
           return;
         }
 
-        console.log('Auth callback - starting exchangeCodeForSession...');
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        console.log('Auth callback - exchange completed');
-        console.log('Auth callback - exchange result:', data, exchangeError);
-        
-        if (exchangeError) {
-          console.error('Auth callback - exchange error:', exchangeError);
-          setError(exchangeError.message);
-          return;
-        }
-
-        if (data.session) {
-          console.log('Auth callback - session created successfully:', data.session.user.id);
-          console.log('Auth callback - full session data:', data.session);
+        if (session) {
+          console.log('Auth callback - session created successfully:', session.user.id);
           
           // Manually save to localStorage as backup
           const sessionKey = `sb-wlnuqrkdemsymbinhnyc-auth-token`;
-          localStorage.setItem(sessionKey, JSON.stringify(data.session));
+          localStorage.setItem(sessionKey, JSON.stringify(session));
           console.log('Auth callback - manually saved session to localStorage');
           
           // Wait a moment for the session to be persisted
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Verify session is accessible
-          const { data: { session: verifySession } } = await supabase.auth.getSession();
-          console.log('Auth callback - session verified:', !!verifySession);
-          console.log('Auth callback - localStorage check:', !!localStorage.getItem(sessionKey));
-          
           console.log('Auth callback - redirecting to:', next);
           router.replace(next as never);
         } else {
-          console.error('Auth callback - no session in response');
+          console.error('Auth callback - no session created');
           setError('Authentication failed: no session created');
         }
       } catch (e: any) {
+        console.error('Auth callback - unexpected error:', e);
         setError(e?.message ?? 'Unexpected error.');
       }
     };
