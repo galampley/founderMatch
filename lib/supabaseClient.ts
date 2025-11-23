@@ -12,7 +12,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
-    // Try implicit flow instead of PKCE to avoid hanging issues
     flowType: 'implicit',
     detectSessionInUrl: true,
     autoRefreshToken: true,

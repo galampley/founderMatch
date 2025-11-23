@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { supabase } from '@/lib/supabaseClient';
@@ -6,6 +6,11 @@ import { supabase } from '@/lib/supabaseClient';
 export default function AuthCallback() {
   const router = useRouter();
   const params = useLocalSearchParams<{ code?: string; access_token?: string; next?: string }>();
+  const hashParams = useMemo(() => {
+    if (typeof window === 'undefined') return {};
+    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    return Object.fromEntries(new URLSearchParams(hash));
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,7 +20,12 @@ export default function AuthCallback() {
       try {
         console.log('Auth callback - starting handle function');
         const code = typeof params.code === 'string' ? params.code : undefined;
-        const access_token = typeof params.access_token === 'string' ? params.access_token : undefined;
+        const access_token =
+          typeof params.access_token === 'string'
+            ? params.access_token
+            : typeof hashParams.access_token === 'string'
+              ? hashParams.access_token
+              : undefined;
         const rawNext = typeof params.next === 'string' ? params.next : '/onboarding';
         const decodedNext = decodeURIComponent(rawNext);
         const next = decodedNext.startsWith('/') ? decodedNext : `/${decodedNext}`;
@@ -89,7 +99,7 @@ export default function AuthCallback() {
       }
     };
     handle();
-  }, [params, router]);
+  }, [params, router, hashParams]);
 
   if (error) {
     return (
