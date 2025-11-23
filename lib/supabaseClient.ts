@@ -12,9 +12,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '', {
   auth: {
-    // Use PKCE for OAuth/magic link flows and let the callback route handle URL parsing
-    flowType: 'pkce',
-    detectSessionInUrl: false,
+    // Try implicit flow instead of PKCE to avoid hanging issues
+    flowType: 'implicit',
+    detectSessionInUrl: true,
     autoRefreshToken: true,
     persistSession: true,
   },
