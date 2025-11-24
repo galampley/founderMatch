@@ -123,20 +123,29 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
 
 export async function upsertCurrentUserProfile(profile: UserProfile): Promise<boolean> {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('ProfileService: upsertCurrentUserProfile - starting...');
     
-    if (authError) {
-      console.error('Error getting current user:', authError);
+    // Get user ID from localStorage session instead of calling getUser()
+    const localSession = localStorage.getItem('sb-wlnuqrkdemsymbinhnyc-auth-token');
+    if (!localSession) {
+      console.error('No session found in localStorage');
       return false;
     }
     
-    if (!user) {
-      console.error('No authenticated user found');
+    const parsedSession = JSON.parse(localSession);
+    const userId = parsedSession?.user?.id;
+    
+    if (!userId) {
+      console.error('No user ID found in session');
       return false;
     }
+    
+    console.log('ProfileService: upsertCurrentUserProfile - using user ID:', userId);
 
     const profileRow = userProfileToRow(profile);
-    profileRow.id = user.id; // Ensure the ID matches the authenticated user
+    profileRow.id = userId; // Ensure the ID matches the authenticated user
+    
+    console.log('ProfileService: upsertCurrentUserProfile - about to upsert:', profileRow);
 
     const { error } = await supabase
       .from('profiles')
@@ -149,7 +158,8 @@ export async function upsertCurrentUserProfile(profile: UserProfile): Promise<bo
       console.error('Error upserting user profile:', error);
       return false;
     }
-
+    
+    console.log('ProfileService: upsertCurrentUserProfile - success');
     return true;
   } catch (error) {
     console.error('Unexpected error in upsertCurrentUserProfile:', error);

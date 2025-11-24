@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { UserProfile } from '@/types/user';
 import { getCurrentUserProfile, upsertCurrentUserProfile } from '@/lib/profileService';
 import { supabase } from '@/lib/supabaseClient';
+import { getLocalSession, clearLocalSession } from '@/lib/sessionUtils';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -18,23 +19,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshProfile = async () => {
+    if (loading) return; // Prevent concurrent refreshes
+    
     setLoading(true);
     try {
-      console.log('UserContext: refreshProfile - checking auth status...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('UserContext: current session:', session, sessionError);
+      const session = getLocalSession();
       
-      if (session) {
-        console.log('UserContext: session found, fetching profile...');
+      if (session?.user) {
         const profile = await getCurrentUserProfile();
-        console.log('UserContext: profile fetched:', profile);
         setUser(profile);
       } else {
-        console.log('UserContext: no session found');
         setUser(null);
       }
     } catch (error) {
       console.error('Error refreshing profile:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -112,33 +111,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       console.log('UserContext: loadUserProfile - starting...');
       
       try {
-        // Check localStorage first since getSession() might be hanging
-        const localSession = localStorage.getItem('sb-wlnuqrkdemsymbinhnyc-auth-token');
-        console.log('UserContext: localStorage session exists:', !!localSession);
-        
-        let session = null;
-        
-        if (localSession) {
-          try {
-            console.log('UserContext: Found localStorage session, parsing...');
-            const parsedSession = JSON.parse(localSession);
-            console.log('UserContext: Parsed session user ID:', parsedSession?.user?.id);
-            
-            // Skip setSession since it's hanging - use session data directly
-            session = parsedSession;
-            console.log('UserContext: Using localStorage session directly (bypassing setSession)');
-          } catch (parseError) {
-            console.error('UserContext: Error parsing localStorage session:', parseError);
-          }
-        }
-        
-        if (!session) {
-          console.log('UserContext: No localStorage session, trying getSession...');
-          const { data: { session: supabaseSession }, error } = await supabase.auth.getSession();
-          console.log('UserContext: getSession completed');
-          session = supabaseSession;
-          console.log('UserContext: getSession result:', !!session, error);
-        }
+        const session = getLocalSession();
       
         if (session?.user) {
           console.log('UserContext: loadUserProfile - session found, fetching profile directly...');
@@ -169,12 +142,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await refreshProfile();
-      } else {
+      if (event === 'SIGNED_OUT') {
+        clearLocalSession();
         setUser(null);
         setLoading(false);
       }
+      // Don't refresh profile on SIGNED_IN - loadUserProfile handles initial load
     });
 
     return () => subscription.unsubscribe();

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { supabase } from '@/lib/supabaseClient';
+import { saveLocalSession } from '@/lib/sessionUtils';
 
 export default function AuthCallback() {
   const router = useRouter();

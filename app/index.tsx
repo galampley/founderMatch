@@ -6,25 +6,21 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 export default function Index() {
   const { user, loading } = useUser();
 
-  console.log('Index screen - Current user:', user);
-  console.log('Index screen - Onboarding complete:', user?.isOnboardingComplete);
 
   useEffect(() => {
     if (loading) return; // Wait for profile to load
     
     // Only redirect on initial app load, not when navigating between tabs
     const timer = setTimeout(() => {
-      if (user?.isOnboardingComplete) {
-        console.log('Index: Redirecting to tabs');
-        router.replace('/(tabs)');
+      if (!user) {
+        router.replace('/auth/sign-in');
       } else {
-        console.log('Index: Redirecting to onboarding');
-        router.replace('/onboarding');
+        router.replace('/(tabs)');
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [user?.isOnboardingComplete, loading]);
+  }, [user, loading]);
 
   // Show loading spinner while determining route
   return (
