@@ -11,9 +11,10 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
-import { CreditCard as Edit, Camera, Settings, MapPin, X, Plus } from 'lucide-react-native';
+import { CreditCard as Edit, Camera, Settings, MapPin, X, Plus, LogOut } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useUser } from '@/contexts/UserContext';
+import { supabase } from '@/lib/supabaseClient';
 
 
 export default function ProfileScreen() {
@@ -195,6 +196,18 @@ export default function ProfileScreen() {
     setShowPromptPicker(false);
   };
 
+  const handleSignOut = async () => {
+    console.log('Sign out button pressed');
+    
+    // Use confirm for web compatibility
+    const confirmed = confirm('Are you sure you want to sign out?');
+    if (confirmed) {
+      console.log('Signing out...');
+      await supabase.auth.signOut();
+      router.replace('/auth/sign-in');
+    }
+  };
+
   console.log('Profile screen - Current user:', user);
   console.log('Profile screen - User photos:', user?.photos);
   console.log('Profile screen - User prompts:', user?.prompts);
@@ -256,8 +269,8 @@ export default function ProfileScreen() {
         <Text style={styles.headerTitle}>My Profile</Text>
       </View>
       
-      <TouchableOpacity style={styles.settingsButton}>
-        <Settings size={24} color="#fff" />
+      <TouchableOpacity style={styles.settingsButton} onPress={handleSignOut}>
+        <LogOut size={24} color="#fff" />
       </TouchableOpacity>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

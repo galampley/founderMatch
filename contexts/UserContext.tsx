@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { UserProfile } from '@/types/user';
 import { getCurrentUserProfile, upsertCurrentUserProfile } from '@/lib/profileService';
 import { supabase } from '@/lib/supabaseClient';
-import { getLocalSession, clearLocalSession } from '@/lib/sessionUtils';
+import { getLocalSession, clearLocalSession, saveLocalSession } from '@/lib/sessionUtils';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -13,6 +13,23 @@ interface UserContextType {
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+const buildPlaceholderProfile = (userId: string): UserProfile => ({
+  id: userId,
+  name: '',
+  age: 0,
+  location: '',
+  photos: [],
+  prompts: [],
+  basics: {
+    height: '',
+    education: '',
+    jobTitle: '',
+    religion: '',
+    lookingFor: '',
+  },
+  isOnboardingComplete: false,
+});
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -26,8 +43,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const session = getLocalSession();
       
       if (session?.user) {
-        const profile = await getCurrentUserProfile();
-        setUser(profile);
+          const profile = await getCurrentUserProfile();
+        
+        if (!profile) {
+          const placeholderProfile = buildPlaceholderProfile(session.user.id);
+          setUser(placeholderProfile);
+          
+          try {
+            await upsertCurrentUserProfile(placeholderProfile);
+          } catch (placeholderError) {
+            console.error('UserContext: Failed to persist placeholder profile during refresh:', placeholderError);
+          }
+        } else {
+          setUser(profile);
+        }
       } else {
         setUser(null);
       }
@@ -114,15 +143,39 @@ export function UserProvider({ children }: { children: ReactNode }) {
         const session = getLocalSession();
       
         if (session?.user) {
-          console.log('UserContext: loadUserProfile - session found, fetching profile directly...');
+          console.log('UserContext: loadUserProfile - session found, retrieving Supabase auth user...');
           setLoading(true);
           try {
-            console.log('UserContext: Fetching profile from database...');
+            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+            if (authError || !authUser) {
+              console.error('UserContext: No authenticated user returned, clearing session');
+              clearLocalSession();
+              setUser(null);
+              return;
+            }
+
+            console.log('UserContext: Auth user found, fetching profile...');
             const profile = await getCurrentUserProfile();
             console.log('UserContext: Profile fetched:', profile);
-            setUser(profile);
+            
+            if (!profile) {
+              console.log('UserContext: No profile found - initializing placeholder for onboarding');
+              
+              const placeholderProfile = buildPlaceholderProfile(authUser.id);
+              setUser(placeholderProfile);
+
+              try {
+                await upsertCurrentUserProfile(placeholderProfile);
+                console.log('UserContext: Placeholder profile persisted');
+              } catch (placeholderError) {
+                console.error('UserContext: Failed to persist placeholder profile:', placeholderError);
+              }
+            } else {
+              setUser(profile);
+            }
           } catch (error) {
             console.error('UserContext: Error fetching profile:', error);
+            setUser(null);
           } finally {
             setLoading(false);
           }

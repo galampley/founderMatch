@@ -10,11 +10,19 @@ export default function Index() {
   useEffect(() => {
     if (loading) return; // Wait for profile to load
     
+    console.log('Index: user =', user);
+    console.log('Index: user.isOnboardingComplete =', user?.isOnboardingComplete);
+    
     // Only redirect on initial app load, not when navigating between tabs
     const timer = setTimeout(() => {
       if (!user) {
+        console.log('Index: No user, redirecting to sign-in');
         router.replace('/auth/sign-in');
+      } else if (!user.isOnboardingComplete) {
+        console.log('Index: User not onboarded, redirecting to onboarding');
+        router.replace('/onboarding');
       } else {
+        console.log('Index: User onboarded, redirecting to tabs');
         router.replace('/(tabs)');
       }
     }, 100);
